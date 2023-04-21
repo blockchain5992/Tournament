@@ -1,34 +1,95 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity =0.8.18;
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
+contract Tournament {
+    // counter variable for Tournament ID
+    uint public counter;
+    // Owner address init in constructor
+    address public owner;
 
-contract Lock {
-    uint public unlockTime;
-    address payable public owner;
-
-    event Withdrawal(uint amount, uint when);
-
-    constructor(uint _unlockTime) payable {
-        require(
-            block.timestamp < _unlockTime,
-            "Unlock time should be in the future"
-        );
-
-        unlockTime = _unlockTime;
-        owner = payable(msg.sender);
+    struct TournamentDetail {
+        // minimum user
+        uint minUser;
+        // registered user for specific tournament
+        uint userCount;
+        // bool value for status of touranament
+        bool status;
     }
 
-    function withdraw() public {
-        // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-        // console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
+    struct PlayerDetail {
+        // player tournament Id
+        uint tournamentId;
+        // player score
+        uint score;
+        // bool value
+        bool isJoined;
+    }
 
-        require(block.timestamp >= unlockTime, "You can't withdraw yet");
-        require(msg.sender == owner, "You aren't the owner");
+    // For Storing tournament details
+    mapping(uint => TournamentDetail) public TournamentDetails;
+    // For Storing player details
+    mapping(address => mapping(uint => PlayerDetail)) public PlayerDetails;
 
-        emit Withdrawal(address(this).balance, block.timestamp);
+    event TournamentAdded(uint counter, uint minUser);
+    event UserJoined(uint id, uint count);
 
-        owner.transfer(address(this).balance);
+    constructor() {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Unauthorized Access");
+        _;
+    }
+
+    function addTournament(uint _minUser) external onlyOwner {
+        TournamentDetail storage TournamentInfo = TournamentDetails[counter];
+        TournamentInfo.minUser = _minUser;
+        emit TournamentAdded(counter, _minUser);
+    }
+
+    function joinTournament(uint id) external {
+        PlayerDetail storage PlayerInfo = PlayerDetails[msg.sender][id];
+        TournamentDetail storage TournamentInfo = TournamentDetails[counter];
+        PlayerInfo.isJoined = true;
+        TournamentInfo.userCount += 1;
+        emit UserJoined(id, TournamentInfo.userCount);
+    }
+
+    function startTournament(uint id) external {
+        TournamentDetail memory TournamentInfo = TournamentDetails[id];
+        uint userCount = TournamentInfo.userCount;
+        uint minUser = TournamentInfo.minUser;
+        bool status = TournamentInfo.status;
+        require(userCount > minUser, "Less User");
+        require(!status, "Already Active");
+        TournamentDetails[id].status = true;
+    }
+
+    function EndTournament(
+        address[] calldata user,
+        uint[] calldata score,
+        uint id
+    ) external onlyOwner {
+        uint length = score.length;
+
+        for (uint i = 0; i < length; ++i) {
+            address player = user[i];
+            PlayerDetail storage PlayerInfo = PlayerDetails[player][id];
+            PlayerInfo.score = score[i];
+        }
+    }
+
+    function getActiveTournaments() external view returns (uint[] memory) {
+        uint i;
+        uint j = counter;
+        uint[] memory arr = new uint[](j);
+        while (i < j) {
+            if (TournamentDetails[i].status) {
+                arr[i] = i;
+            }
+            i++;
+        }
+        return arr;
     }
 }
