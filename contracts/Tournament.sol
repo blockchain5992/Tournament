@@ -12,16 +12,16 @@ contract Tournament {
         uint minUser;
         // registered user for specific tournament
         uint userCount;
-        // bool value for status of touranament
+        // bool value for status of tournament i.e NotStarted/Started
         bool status;
+        // bool value for tracking finish
+        bool isFinished;
     }
 
     struct PlayerDetail {
-        // player tournament Id
-        uint tournamentId;
-        // player score
+        // player score as per tournament Id
         uint score;
-        // bool value
+        // bool value for tracking joining
         bool isJoined;
     }
 
@@ -43,15 +43,21 @@ contract Tournament {
     }
 
     function addTournament(uint _minUser) external onlyOwner {
+        require(_minUser > 0, "Can't be Zero");
         TournamentDetail storage TournamentInfo = TournamentDetails[counter];
         TournamentInfo.minUser = _minUser;
-        emit TournamentAdded(counter, _minUser);
+        counter++;
+        emit TournamentAdded(counter - 1, _minUser);
     }
 
     function joinTournament(uint id) external {
-        require(!TournamentDetails[id].status, "Already Active");
+        TournamentDetail memory TournamentMemInfo = TournamentDetails[id];
+        require(id < counter, "Invalid Id");
+        require(!TournamentMemInfo.isFinished, "Already Finished");
+        require(!TournamentMemInfo.status, "Already Started");
+        require(!PlayerDetails[msg.sender][id].isJoined, "Already joined");
         PlayerDetail storage PlayerInfo = PlayerDetails[msg.sender][id];
-        TournamentDetail storage TournamentInfo = TournamentDetails[counter];
+        TournamentDetail storage TournamentInfo = TournamentDetails[id];
         PlayerInfo.isJoined = true;
         TournamentInfo.userCount += 1;
         emit UserJoined(id, TournamentInfo.userCount);
@@ -59,36 +65,41 @@ contract Tournament {
 
     function startTournament(uint id) external {
         TournamentDetail memory TournamentInfo = TournamentDetails[id];
-        uint userCount = TournamentInfo.userCount;
-        uint minUser = TournamentInfo.minUser;
-        bool status = TournamentInfo.status;
-        require(userCount > minUser, "Less User");
-        require(!status, "Already Active");
+        require(
+            TournamentInfo.userCount >= TournamentInfo.minUser,
+            "Less User"
+        );
+        require(!TournamentInfo.status, "Already Started");
         TournamentDetails[id].status = true;
     }
 
-    function EndTournament(
+    function endTournament(
         address[] calldata user,
         uint[] calldata score,
         uint id
     ) external onlyOwner {
-        require(TournamentDetails[id].status, "Not Active");
-        uint length = score.length;
-
-        for (uint i = 0; i < length; ++i) {
+        TournamentDetail memory TournamentMemInfo = TournamentDetails[id];
+        require(TournamentMemInfo.status, "Not Active");
+        require(!TournamentMemInfo.isFinished, "Already Finished");
+        uint scoreLength = score.length;
+        uint userLength = user.length;
+        require(scoreLength == userLength, "Invalid Length");
+        for (uint i = 0; i < scoreLength; ++i) {
             address player = user[i];
             PlayerDetail storage PlayerInfo = PlayerDetails[player][id];
             PlayerInfo.score = score[i];
         }
+        TournamentDetails[id].isFinished = true;
     }
 
-    function getActiveTournaments() external view returns (uint[] memory) {
-        uint i;
+    function getActiveTournaments() external view returns (bool[] memory) {
+        uint i = 0;
         uint j = counter;
-        uint[] memory arr = new uint[](j);
+        bool[] memory arr = new bool[](j);
         while (i < j) {
-            if (TournamentDetails[i].status) {
-                arr[i] = i;
+            TournamentDetail memory TournamentInfo = TournamentDetails[i];
+            if (TournamentInfo.status && !(TournamentInfo.isFinished)) {
+                arr[i] = true;
             }
             i++;
         }
