@@ -49,6 +49,7 @@ contract Tournament {
     }
 
     function joinTournament(uint id) external {
+        require(!TournamentDetails[id].status, "Already Active");
         PlayerDetail storage PlayerInfo = PlayerDetails[msg.sender][id];
         TournamentDetail storage TournamentInfo = TournamentDetails[counter];
         PlayerInfo.isJoined = true;
@@ -71,6 +72,7 @@ contract Tournament {
         uint[] calldata score,
         uint id
     ) external onlyOwner {
+        require(TournamentDetails[id].status, "Not Active");
         uint length = score.length;
 
         for (uint i = 0; i < length; ++i) {
