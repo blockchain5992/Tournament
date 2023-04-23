@@ -27,11 +27,11 @@ contract Tournament {
 
     // For Storing tournament details
     mapping(uint => TournamentDetail) public TournamentDetails;
-    // For Storing player details
+    // For Storing player details as per tournament ID
     mapping(address => mapping(uint => PlayerDetail)) public PlayerDetails;
 
-    event TournamentAdded(uint counter, uint minUser);
-    event UserJoined(uint id, uint count);
+    event TournamentAdded(uint indexed counter, uint minUser);
+    event UserJoined(uint indexed id, uint count);
 
     constructor() {
         owner = msg.sender;
