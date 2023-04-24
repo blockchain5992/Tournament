@@ -2,7 +2,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const Web3 = require("web3");
-const fs = require("fs");
 const dotenv = require("dotenv");
 const Provider = require("@truffle/hdwallet-provider");
 const CONTRACT_ABI = require("./ContractABI/config");
