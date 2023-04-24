@@ -32,6 +32,8 @@ contract Tournament {
 
     event TournamentAdded(uint indexed counter, uint minUser);
     event UserJoined(uint indexed id, uint count);
+    event TournamentStarted(uint indexed id);
+    event TournamentEnded(uint indexed id);
 
     constructor() {
         owner = msg.sender;
@@ -71,6 +73,7 @@ contract Tournament {
         );
         require(!TournamentInfo.status, "Already Started");
         TournamentDetails[id].status = true;
+        emit TournamentStarted(id);
     }
 
     function endTournament(
@@ -90,6 +93,7 @@ contract Tournament {
             PlayerInfo.score = score[i];
         }
         TournamentDetails[id].isFinished = true;
+        emit TournamentEnded(id);
     }
 
     function getActiveTournaments() external view returns (bool[] memory) {
