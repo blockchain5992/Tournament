@@ -195,8 +195,9 @@ describe("Tournament", function () {
         "UserJoined"
       );
       await expect(tournament.startTournament(id)).not.to.be.reverted;
-      await expect(tournament.endTournament(user, score, id)).to.emit(tournament, "TournamentEnded")
-      .withArgs(id);
+      await expect(tournament.endTournament(user, score, id))
+        .to.emit(tournament, "TournamentEnded")
+        .withArgs(id);
       let tournamentInfo = await tournament.TournamentDetails(id);
       let isFinish = tournamentInfo.isFinished;
       expect(isFinish).to.equal(true);
