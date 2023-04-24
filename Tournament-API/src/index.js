@@ -10,6 +10,12 @@ const CONTRACT_ABI = require("./ContractABI/config");
 // Load environment variables
 dotenv.config();
 
+// Create express app
+const app = express();
+app.use(express.json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 // Load contract ABI and address
 
 const privatekey = process.env.PRIVATE_KEY;
@@ -22,12 +28,6 @@ const tournamentContract = new web3.eth.Contract(
   CONTRACT_ABI.ContractABI,
   contractAddress
 );
-
-// Create express app
-const app = express();
-app.use(express.json());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 // Define API routes
 app.get("/tournament/getActiveTournaments", async (req, res) => {
@@ -42,28 +42,29 @@ app.get("/tournament/getActiveTournaments", async (req, res) => {
   }
 });
 
-app.get("/tournament/getScoreCard", async (req, res) => {
-  const { body } = req;
-  const userAddress = body.userAddress;
-  const id = body.id;
+app.get("/tournament/getScoreCard/:address/:id", async (req, res) => {
+  const userAddress = req.params.address;
+  const id = req.params.id;
+  console.log("userAddress",userAddress);
+  console.log(id);
 
   try {
     const scoreCard = await tournamentContract.methods
-      .PlayerDetails(userAddress)(id)
+      .PlayerDetails(userAddress, id)
       .call();
     res.send(scoreCard);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred" });
   }
-  
+
   // Save the response in a JSON file
-//   const data = { account, balance };
-//   const filename = `${account}.json`;
-//   fs.writeFile(filename, JSON.stringify(data), (err) => {
-//     if (err) console.error(err);
-//     console.log(`Data written to ${filename}`);
-//   });
+  //   const data = { account, balance };
+  //   const filename = `${account}.json`;
+  //   fs.writeFile(filename, JSON.stringify(data), (err) => {
+  //     if (err) console.error(err);
+  //     console.log(`Data written to ${filename}`);
+  //   });
 });
 
 app.post("/tournament/addTournament", async (req, res) => {
